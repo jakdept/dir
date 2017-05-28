@@ -24,6 +24,7 @@ package dir
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 
@@ -31,16 +32,17 @@ import (
 )
 
 type Dir struct {
-	dirs    map[string]interface{}
-	lock    sync.RWMutex
-	updates chan notify.EventInfo
+	dirs     map[string]interface{}
+	basepath string
+	lock     sync.RWMutex
+	updates  chan notify.EventInfo
 }
 
 func (d *Dir) In(s string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 
-	_, isIn := d.dirs[s]
+	_, isIn := d.dirs[filepath.Clean(s)]
 	return isIn
 }
 
@@ -55,17 +57,26 @@ func (d *Dir) List() []string {
 	return dirs
 }
 
-func (d *Dir) WalkFunc(path string, info os.FileInfo, err error) error {
-	// might not handle symlinks - remember to check for that
-	if !info.IsDir() {
+func (d *Dir) walkFunc() filepath.WalkFunc {
+	return func(loc string, info os.FileInfo, err error) error {
+		// might not handle symlinks - remember to check for that
+		if !info.IsDir() {
+			return nil
+		}
+
+		d.lock.Lock()
+		defer d.lock.Unlock()
+		d.dirs[d.makePath(loc)] = true
 		return nil
 	}
+}
 
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	// maybe doesn't strip the prefix from the path?
-	d.dirs[path] = true
-	return nil
+func (d *Dir) makePath(p string) string {
+	loc, err := filepath.Rel(d.basepath, p)
+	if err != nil {
+		return path.Clean("/" + p)
+	}
+	return path.Clean("/" + loc)
 }
 
 func (d *Dir) updateDir(e notify.EventInfo) {
@@ -74,18 +85,18 @@ func (d *Dir) updateDir(e notify.EventInfo) {
 
 	switch e.Event() {
 	case notify.Create:
-		d.dirs[e.Path()] = true
+		d.dirs[d.makePath(e.Path())] = true
 	case notify.Rename:
 		// apparently a rename operation fires off two events?
 		// https://github.com/rjeczalik/notify/issues/78
 		_, err := os.Stat(e.Path())
 		if err != nil {
-			delete(d.dirs, e.Path())
+			delete(d.dirs, d.makePath(e.Path()))
 		} else {
-			d.dirs[e.Path()] = true
+			d.dirs[d.makePath(e.Path())] = true
 		}
 	case notify.Remove:
-		delete(d.dirs, e.Path())
+		delete(d.dirs, d.makePath(e.Path()))
 	}
 }
 
@@ -99,7 +110,7 @@ func (d *Dir) processEvents() {
 
 func (d *Dir) Close() {
 	notify.Stop(d.updates)
-	close(d.updates)
+	// close(d.updates)
 }
 
 func Watch(path string) (*Dir, error) {
@@ -113,8 +124,10 @@ func Watch(path string) (*Dir, error) {
 		return nil, err
 	}
 
+	d.basepath = path
 	d.updates = make(chan notify.EventInfo, 100)
-	d.processEvents()
+	d.dirs = make(map[string]interface{})
+	go d.processEvents()
 	defer d.Close()
 
 	err = notify.Watch(path, d.updates, notify.FSEventsIsDir)
@@ -122,7 +135,7 @@ func Watch(path string) (*Dir, error) {
 		return nil, err
 	}
 
-	err = filepath.Walk(path, d.WalkFunc)
+	err = filepath.Walk(path, d.walkFunc())
 	if err != nil {
 		return nil, err
 	}
