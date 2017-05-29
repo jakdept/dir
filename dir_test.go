@@ -129,13 +129,9 @@ func TestLive(t *testing.T) {
 	}
 
 	assert.True(t, dir.In(folders[0]))
-	// for _, each := range folders {
-	// 	assert.True(t, dir.In(each))
-	// }
 
 	for _, each := range notFolders {
 		assert.False(t, dir.In(each))
 	}
-
 	// cannot verify list as not all directories will show up right away
 }
