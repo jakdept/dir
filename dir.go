@@ -20,6 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// Package dir provides a mechanism to track all directories under a location.
+// It can be queried at any time for a list of all directories uderneath, and
+// any directory can be checked for within that location at any time. Paths
+// within are treated as if chrooted - absolute path is measured from the
+// tracking point.
+//
+// There will likely be a delay of a few seconds before new directories are
+// picked up, but the delay is platform specific.
+//
+// When done, it should be closed.
+//
+// Watch should be used to start tracking a directory, as startup is needed.
 package dir
 
 import (
@@ -31,6 +43,9 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
+// Dir is a type used to track folders under a specific location. It will scan
+// that location recursively upon startup, and watch for further directory
+// creation, removal, renaming, and the like.
 type Dir struct {
 	dirs     map[string]interface{}
 	basepath string
@@ -39,6 +54,7 @@ type Dir struct {
 	updates  chan notify.EventInfo
 }
 
+// In allows to see if any given path within the trackced paths is present.
 func (d *Dir) In(s string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -50,6 +66,7 @@ func (d *Dir) In(s string) bool {
 	return isIn
 }
 
+// List will return all directories within the location as currently tracked.
 func (d *Dir) List() []string {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -120,6 +137,7 @@ func (d *Dir) processEvents() {
 	}()
 }
 
+// Close stops tracking the directory structure and closes it.
 func (d *Dir) Close() {
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -128,6 +146,9 @@ func (d *Dir) Close() {
 	// close(d.updates)
 }
 
+// Watch is used to start watching a given location for updates. Once run, the
+// returned Dir can be queried immediately for current directory contents, and
+// will pick up changes after a short delay.
 func Watch(path string) (*Dir, error) {
 	var d Dir
 

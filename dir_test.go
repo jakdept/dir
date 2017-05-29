@@ -37,13 +37,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func ExampleList() {
+// This is a basic example showing how to list directories under a given location.
+func ExampleDir_List() {
+	// Open the location - in this case, the test data.
 	dir, err := Watch("testdata/")
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Close it when done
 	defer dir.Close()
 
+	// List the contents. The rest is consistent formatting.
 	list := dir.List()
 	sort.Strings(list)
 	bytes, _ := json.MarshalIndent(list, "", "\t")
@@ -70,13 +74,16 @@ func ExampleList() {
 	// ]
 }
 
-func ExampleIn() {
+// This is an example showing how to test if something is present under the location.
+func ExampleDir_In() {
+	// Open the location, and close it when done with this.
 	dir, err := Watch("testdata/")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dir.Close()
 
+	// Test to see if topA/middleB is a sub directory of testdata/
 	fmt.Println(dir.In("/topA/middleB"))
 	// Output:
 	// true
