@@ -52,26 +52,22 @@ func ExampleDir_List() {
 	sort.Strings(list)
 	bytes, _ := json.MarshalIndent(list, "", "\t")
 	fmt.Println(string(bytes))
-	// Output:
-	// [
-	// 	"/",
-	// 	"/TopC",
-	// 	"/topA",
-	// 	"/topA/MiddleC",
-	// 	"/topA/middleA",
-	// 	"/topA/middleA/DeepA",
-	// 	"/topA/middleA/DeepB",
-	// 	"/topA/middleA/DeepC",
-	// 	"/topA/middleB",
-	// 	"/topA/middleB/DeepA",
-	// 	"/topA/middleB/DeepB",
-	// 	"/topA/middleB/DeepC",
-	// 	"/topB",
-	// 	"/topB/middleA",
-	// 	"/topB/middleA/DeepA",
-	// 	"/topB/middleA/DeepB",
-	// 	"/topB/middleA/DeepC"
-	// ]
+}
+
+func TestList(t *testing.T) {
+	// Open the location - in this case, the test data.
+	dir, err := Watch("testdata/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Close it when done
+	defer dir.Close()
+
+	// List the contents. The rest is consistent formatting.
+	list := dir.List()
+	sort.Strings(list)
+	bytes, _ := json.MarshalIndent(list, "", "\t")
+	goldie.Assert(t, "TestStatic", bytes)
 }
 
 // This is an example showing how to test if something is present under the location.
@@ -145,5 +141,5 @@ func TestLive(t *testing.T) {
 	sort.Strings(list)
 	bytes, _ := json.MarshalIndent(list, "", "\t")
 
-	goldie.Assert(t, "LiveTest", bytes)
+	goldie.Assert(t, "TestLive", bytes)
 }
