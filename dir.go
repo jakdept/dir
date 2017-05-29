@@ -35,12 +35,16 @@ type Dir struct {
 	dirs     map[string]interface{}
 	basepath string
 	lock     sync.RWMutex
+	isClosed bool
 	updates  chan notify.EventInfo
 }
 
 func (d *Dir) In(s string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
+	if d.isClosed {
+		return false
+	}
 
 	_, isIn := d.dirs[filepath.Clean(s)]
 	return isIn
@@ -49,6 +53,9 @@ func (d *Dir) In(s string) bool {
 func (d *Dir) List() []string {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
+	if d.isClosed {
+		return []string{}
+	}
 
 	var dirs []string
 	for each := range d.dirs {
@@ -72,11 +79,10 @@ func (d *Dir) walkFunc() filepath.WalkFunc {
 }
 
 func (d *Dir) makePath(p string) string {
-	loc, err := filepath.Rel(d.basepath, p)
-	if err != nil {
-		return path.Clean("/" + p)
-	}
-	return path.Clean("/" + loc)
+	p, _ = filepath.Abs(p)
+	p, _ = filepath.EvalSymlinks(p)
+	p, _ = filepath.Rel(d.basepath, p)
+	return path.Clean("/" + p)
 }
 
 func (d *Dir) updateDir(e notify.EventInfo) {
@@ -109,7 +115,10 @@ func (d *Dir) processEvents() {
 }
 
 func (d *Dir) Close() {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	notify.Stop(d.updates)
+	d.isClosed = true
 	// close(d.updates)
 }
 
@@ -124,13 +133,13 @@ func Watch(path string) (*Dir, error) {
 		return nil, err
 	}
 
-	d.basepath = path
-	d.updates = make(chan notify.EventInfo, 100)
+	path, _ = filepath.Abs(path)
+	d.basepath, _ = filepath.EvalSymlinks(path)
+	d.updates = make(chan notify.EventInfo, 10)
 	d.dirs = make(map[string]interface{})
 	go d.processEvents()
-	defer d.Close()
 
-	err = notify.Watch(path, d.updates, notify.FSEventsIsDir)
+	err = notify.Watch(path, d.updates, notify.All)
 	if err != nil {
 		return nil, err
 	}

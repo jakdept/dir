@@ -25,21 +25,25 @@ package dir
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"sort"
 	"testing"
+	"time"
+
+	"github.com/sebdah/goldie"
+	"github.com/stretchr/testify/assert"
 )
-
-func StaticTest(t *testing.T) {
-	t.Skip()
-
-}
 
 func ExampleList() {
 	dir, err := Watch("testdata/")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer dir.Close()
+
 	list := dir.List()
 	sort.Strings(list)
 	bytes, _ := json.MarshalIndent(list, "", "\t")
@@ -71,7 +75,62 @@ func ExampleIn() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer dir.Close()
+
 	fmt.Println(dir.In("/topA/middleB"))
 	// Output:
 	// true
+}
+
+func TestLive(t *testing.T) {
+	folders := []string{
+		"/apple",
+		"/banana",
+		"/carrot",
+		"/carrot/celery",
+		"/dog/dolphin",
+	}
+
+	notFolders := []string{
+		"/apricot",
+		"/bubble",
+		"celery",
+	}
+
+	base, err := ioutil.TempDir("", "jakdept.dir-")
+	if err != nil {
+		t.Fatalf("failed to create tempdir - %v", err)
+	}
+
+	dir, err := Watch(base)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dir.Close()
+
+	for _, each := range folders {
+		err = os.MkdirAll(filepath.Join(base, each), 0750)
+		if err != nil {
+			t.Fatalf("failed to create directory - %v", err)
+		}
+	}
+
+	for !dir.In(folders[0]) {
+		time.Sleep(5 * time.Second)
+	}
+
+	assert.True(t, dir.In(folders[0]))
+	// for _, each := range folders {
+	// 	assert.True(t, dir.In(each))
+	// }
+
+	for _, each := range notFolders {
+		assert.False(t, dir.In(each))
+	}
+
+	list := dir.List()
+	sort.Strings(list)
+	bytes, _ := json.MarshalIndent(list, "", "\t")
+
+	goldie.Assert(t, "LiveTest", bytes)
 }
