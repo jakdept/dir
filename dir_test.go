@@ -115,6 +115,12 @@ func TestLive(t *testing.T) {
 		}
 	}
 
+	f, err := os.Create(filepath.Join(base, "junkfile"))
+	if err != nil {
+		t.Fatalf("failed creating a file: %v", err)
+	}
+	f.Close()
+
 	for !dir.In(folders[0]) {
 		time.Sleep(5 * time.Second)
 	}

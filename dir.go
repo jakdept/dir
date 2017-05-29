@@ -89,6 +89,12 @@ func (d *Dir) updateDir(e notify.EventInfo) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
+	// bail out if it's not a directory
+	info, _ := os.Stat(e.Path())
+	if !info.IsDir() {
+		return
+	}
+
 	switch e.Event() {
 	case notify.Create:
 		d.dirs[d.makePath(e.Path())] = true
@@ -139,8 +145,7 @@ func Watch(path string) (*Dir, error) {
 	d.dirs = make(map[string]interface{})
 	go d.processEvents()
 
-	err = notify.Watch(path, d.updates, notify.All)
-	if err != nil {
+	if err = notify.Watch(path, d.updates, notify.All); err != nil {
 		return nil, err
 	}
 
