@@ -114,18 +114,28 @@ func (d *Dir) updateDir(e notify.EventInfo) {
 
 	switch e.Event() {
 	case notify.Create:
+		info, err := os.Stat(e.Path())
+		// if there's a problem checking that directory, or it's not a directory, don't use it
+		if err != nil || !info.IsDir() {
+			return
+		}
 		d.dirs[d.makePath(e.Path())] = true
 	case notify.Rename:
 		// apparently a rename operation fires off two events?
 		// https://github.com/rjeczalik/notify/issues/78
-		_, err := os.Stat(e.Path())
+		info, err := os.Stat(e.Path())
 		if err != nil {
+			// if it cannot be stat'd, it's the removal portion of a rename
 			delete(d.dirs, d.makePath(e.Path()))
-		} else {
+		} else if info.IsDir() {
+			// if it's a directory, it's the new name portion of a rename
 			d.dirs[d.makePath(e.Path())] = true
 		}
 	case notify.Remove:
-		delete(d.dirs, d.makePath(e.Path()))
+		// if it's there, remove it
+		if d.In(d.makePath(e.Path())) {
+			delete(d.dirs, d.makePath(e.Path()))
+		}
 	}
 }
 
