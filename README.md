@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/jakdept/dir.svg?branch=master)](https://travis-ci.org/jakdept/dir)
 [![reference](https://img.shields.io/badge/godoc-reference-blue.svg)](godoc.org/github.com/jakdept/dir)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jakdept/dir)](https://goreportcard.com/report/github.com/jakdept/dir)
 
 Provides a Go package to watch and list a folder structure under a given location.
 
