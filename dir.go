@@ -43,10 +43,10 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// Dir is a type used to track folders under a specific location. It will scan
+// Tracker is a type used to track folders under a specific location. It will scan
 // that location recursively upon startup, and watch for further directory
 // creation, removal, renaming, and the like.
-type Dir struct {
+type Tracker struct {
 	dirs     map[string]interface{}
 	basepath string
 	lock     sync.RWMutex
@@ -55,7 +55,7 @@ type Dir struct {
 }
 
 // In allows to see if any given path within the trackced paths is present.
-func (d *Dir) In(s string) bool {
+func (d *Tracker) In(s string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	if d.isClosed {
@@ -67,7 +67,7 @@ func (d *Dir) In(s string) bool {
 }
 
 // List will return all directories within the location as currently tracked.
-func (d *Dir) List() []string {
+func (d *Tracker) List() []string {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	if d.isClosed {
@@ -81,7 +81,7 @@ func (d *Dir) List() []string {
 	return dirs
 }
 
-func (d *Dir) walkFunc() filepath.WalkFunc {
+func (d *Tracker) walkFunc() filepath.WalkFunc {
 	return func(loc string, info os.FileInfo, err error) error {
 		// might not handle symlinks - remember to check for that
 		if !info.IsDir() {
@@ -95,14 +95,14 @@ func (d *Dir) walkFunc() filepath.WalkFunc {
 	}
 }
 
-func (d *Dir) makePath(p string) string {
+func (d *Tracker) makePath(p string) string {
 	p, _ = filepath.Abs(p)
 	p, _ = filepath.EvalSymlinks(p)
 	p, _ = filepath.Rel(d.basepath, p)
 	return path.Clean("/" + p)
 }
 
-func (d *Dir) updateDir(e notify.EventInfo) {
+func (d *Tracker) updateDir(e notify.EventInfo) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
@@ -139,7 +139,7 @@ func (d *Dir) updateDir(e notify.EventInfo) {
 	}
 }
 
-func (d *Dir) processEvents() {
+func (d *Tracker) processEvents() {
 	func() {
 		for e := range d.updates {
 			go d.updateDir(e)
@@ -148,7 +148,7 @@ func (d *Dir) processEvents() {
 }
 
 // Close stops tracking the directory structure and closes it.
-func (d *Dir) Close() {
+func (d *Tracker) Close() {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	notify.Stop(d.updates)
@@ -157,10 +157,10 @@ func (d *Dir) Close() {
 }
 
 // Watch is used to start watching a given location for updates. Once run, the
-// returned Dir can be queried immediately for current directory contents, and
+// returned Tracker can be queried immediately for current directory contents, and
 // will pick up changes after a short delay.
-func Watch(path string) (*Dir, error) {
-	var d Dir
+func Watch(path string) (*Tracker, error) {
+	var d Tracker
 
 	info, err := os.Stat(path)
 	if err != nil {
