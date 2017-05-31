@@ -38,6 +38,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"sync"
 
 	"github.com/rjeczalik/notify"
@@ -78,6 +79,7 @@ func (d *Tracker) List() []string {
 	for each := range d.dirs {
 		dirs = append(dirs, each)
 	}
+	sort.Strings(dirs)
 	return dirs
 }
 
