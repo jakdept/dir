@@ -15,15 +15,15 @@ func TestRelSym(t *testing.T) {
 		expErr error
 	}{
 		{
-			base:   "testdata/topA",
-			target: "testdata/topA/MiddleA/DeepA",
+			base:   "testdata/TopA",
+			target: "testdata/TopA/MiddleA/DeepA",
 			expVal: "MiddleA/DeepA",
 			expErr: nil,
 		},
 		{
-			base:   "testdata/TopC/backToTopB",
-			target: "testdata/TopC/backToTopB/middleA",
-			expVal: "middleA",
+			base:   "testdata/TopC/BackToTopB",
+			target: "testdata/TopC/BackToTopB/MiddleA",
+			expVal: "MiddleA",
 			expErr: nil,
 		},
 	}
