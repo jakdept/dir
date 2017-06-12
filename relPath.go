@@ -20,8 +20,10 @@ func RelSym(basepath, targetpath string) (string, error) {
 		return "", fmt.Errorf("failed to abs and clean target: %v", err)
 	}
 
+	// #todo# cleanup
 	log.Printf("drive letter [%#v] [%#v] [%v}", basepath[0], targetpath[0],
 		basepath[0] == targetpath[0])
+
 	if strings.ToLower(basepath)[0] != strings.ToLower(targetpath)[0] {
 		return "", fmt.Errorf("windows drive letter differs")
 	}
@@ -41,7 +43,8 @@ func RelSym(basepath, targetpath string) (string, error) {
 }
 
 func relSym(basepath, prefix, target []string) ([]string, error) {
-	log.Printf("start of child\nbasepath: %#v\nprefix: %#v\ntarget:%#v\n", basepath, prefix, target)
+	// ##todo## cleanup
+	// log.Printf("start of child\nbasepath: %#v\nprefix: %#v\ntarget:%#v\n", basepath, prefix, target)
 
 	// if you've cut off all of the prefix, return what you have
 	if len(prefix) <= 0 {
@@ -52,6 +55,7 @@ func relSym(basepath, prefix, target []string) ([]string, error) {
 		return []string{}, errors.New("target is above prefix")
 	}
 
+	// ##todo## cleanup
 	// log.Printf("[%s] [%s] [%v}", prefix[0], target[0], prefix[0] == target[0])
 	if prefix[0] == target[0] {
 		// call recursively, move one folder over
@@ -63,6 +67,7 @@ func relSym(basepath, prefix, target []string) ([]string, error) {
 	prefixPath := filepath.Join(basepathString, prefix[0])
 	targetPath := filepath.Join(basepathString, prefix[0])
 
+	// ##todo## cleanup
 	// log.Printf("currently basepath [%s] prefix [%s] and target [%s]", basepathString, prefixPath, targetPath)
 	// check both files to see if they're symlinks
 	prefixSymInfo, err := os.Lstat(prefixPath)
