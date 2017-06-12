@@ -84,7 +84,7 @@ func (d *Tracker) List() []string {
 func (d *Tracker) walkFunc() filepath.WalkFunc {
 	return func(loc string, info os.FileInfo, err error) error {
 		// might not handle symlinks - remember to check for that
-		if !info.IsDir() {
+		if info.Mode()&(os.ModeSymlink|os.ModeDir) == 0 {
 			return nil
 		}
 
