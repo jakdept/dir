@@ -80,7 +80,7 @@ func ExampleDir_In() {
 	defer dir.Close()
 
 	// Test to see if topA/middleB is a sub directory of testdata/
-	fmt.Println(dir.In("/topA/middleB"))
+	fmt.Println(dir.In("/TopA/MiddleB"))
 	// Output:
 	// true
 }

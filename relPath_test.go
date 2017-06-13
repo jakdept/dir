@@ -19,11 +19,25 @@ func TestRelSym(t *testing.T) {
 			target: "testdata/TopA/MiddleA/DeepA",
 			expVal: "MiddleA/DeepA",
 			expErr: nil,
-		},
-		{
+		}, {
 			base:   "testdata/TopC/BackToTopB",
 			target: "testdata/TopC/BackToTopB/MiddleA",
 			expVal: "MiddleA",
+			expErr: nil,
+		}, {
+			base:   "testdata/TopC/MiddleA/BottomA/BackToTopBMiddleA/BottomC/BackToTopA",
+			target: "testdata/TopC/MiddleA/BottomA/BackToTopBMiddleA/BottomC/BackToTopA/MiddleC/BottomC",
+			expVal: "MiddleC/BottomC",
+			expErr: nil,
+		}, {
+			base:   "testdata/TopB/MiddleA/BottomC/BackToTopA",
+			target: "testdata/TopC/MiddleA/BottomA/BackToTopBMiddleA/BottomC/BackToTopA/MiddleC/BottomC",
+			expVal: "MiddleC/BottomC",
+			expErr: nil,
+		}, {
+			base:   "testdata/TopC/MiddleA/BottomA/BackToTopBMiddleA/BottomC/BackToTopA",
+			target: "testdata/TopA/MiddleC/BottomC",
+			expVal: "MiddleC/BottomC",
 			expErr: nil,
 		},
 	}

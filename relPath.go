@@ -21,8 +21,8 @@ func RelSym(basepath, targetpath string) (string, error) {
 	}
 
 	// #todo# cleanup
-	log.Printf("drive letter [%#v] [%#v] [%v}", basepath[0], targetpath[0],
-		basepath[0] == targetpath[0])
+	// log.Printf("drive letter [%#v] [%#v] [%v}", basepath[0], targetpath[0],
+	// 	basepath[0] == targetpath[0])
 
 	if strings.ToLower(basepath)[0] != strings.ToLower(targetpath)[0] {
 		return "", fmt.Errorf("windows drive letter differs")
@@ -32,7 +32,7 @@ func RelSym(basepath, targetpath string) (string, error) {
 	basepathChunks := strings.Split(basepath, string(os.PathSeparator))[1:]
 	targetpathChunks := strings.Split(targetpath, string(os.PathSeparator))[1:]
 
-	log.Printf("\nchunks going in:\nprefix [%#v]\ntarget [%#v]\n", basepathChunks, targetpathChunks)
+	// log.Printf("\nchunks going in:\nprefix [%#v]\ntarget [%#v]\n", basepathChunks, targetpathChunks)
 
 	relChunks, err := relSym([]string{}, basepathChunks, targetpathChunks)
 	if err != nil {
@@ -44,7 +44,7 @@ func RelSym(basepath, targetpath string) (string, error) {
 
 func relSym(basepath, prefix, target []string) ([]string, error) {
 	// ##todo## cleanup
-	// log.Printf("start of child\nbasepath: %#v\nprefix: %#v\ntarget:%#v\n", basepath, prefix, target)
+	log.Printf("start of child\nbasepath: %#v\nprefix: %#v\ntarget:%#v\n\n", basepath, prefix, target)
 
 	// if you've cut off all of the prefix, return what you have
 	if len(prefix) <= 0 {
@@ -60,6 +60,25 @@ func relSym(basepath, prefix, target []string) ([]string, error) {
 	if prefix[0] == target[0] {
 		// call recursively, move one folder over
 		return relSym(append(basepath, prefix[0]), prefix[1:], target[1:])
+	}
+
+	// strip off ..'s and move directories up as needed
+	if prefix[0] == ".." {
+		i := 1
+		for prefix[i] == ".." {
+			i++
+		}
+		return relSym(basepath[:len(basepath)-i], prefix[i:],
+			append(basepath[len(basepath)-i:], target[:]...),
+		)
+	}
+	if target[0] == ".." {
+		i := 1
+		for target[i] == ".." {
+			i++
+		}
+		return relSym(basepath[:len(basepath)-i],
+			append(basepath[len(basepath)-i:], prefix[:]...), target[i:])
 	}
 
 	// build the absolute version of each path
