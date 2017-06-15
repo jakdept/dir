@@ -82,7 +82,8 @@ func relSym(basepath, prefix, target []string) ([]string, error) {
 	}
 
 	// build the absolute version of each path
-	basepathString := filepath.Join(append([]string{string(os.PathSeparator)}, basepath...)...)
+	basepathString := filepath.Join(
+		append([]string{string(os.PathSeparator)}, basepath...)...)
 	prefixPath := filepath.Join(basepathString, prefix[0])
 	targetPath := filepath.Join(basepathString, prefix[0])
 
@@ -140,4 +141,63 @@ func relSym(basepath, prefix, target []string) ([]string, error) {
 		return []string{}, fmt.Errorf("prefix [%s] is not a part of target [%s]",
 			prefixPath, targetPath)
 	}
+}
+
+// follows a requested symlink
+func findSymlink(base, worker []string) (
+	[]string, []string, error) {
+
+	var info os.FileInfo
+	var symPos int
+	var err error
+	var basePath, currentPath, symDest string
+	basePath = filepath.Join(append([]string{string(os.PathSeparator)}, base...)...)
+
+	// go until you find a symlink
+	for ; symPos < len(worker) && info.Mode()&os.ModeSymlink != 0; symPos++ {
+
+		currentPath = filepath.Join(append([]string{basePath}, worker[:symPos]...)...)
+
+		info, err = os.Lstat(currentPath)
+		if err != nil {
+			return base, worker, err
+		}
+	}
+
+	// ##TODO##
+	// add some sort of a condition here to break out if there's no symlink
+
+	// follow that symlink
+	symDest, err := os.Readlink(currentPath)
+	if err != nil {
+		return base, worker, err
+	}
+
+	// if it's absolute, make the target relative
+	if filepath.IsAbs(symDest) {
+		symDest, err = filepath.Rel(currentPath, symDest)
+		if err != nil {
+			return base, worker, err
+		}
+	}
+
+	// break up the symlink into parts
+	symParts := strings.Split(symDest, string(os.PathSeparator))
+
+	// put the parts back in order
+
+	worker = append(append(worker[:symPos], symParts...), worker[symPos+1:]...)
+
+	cleanPathParts(worker)
+
+	return base, worker, nil
+}
+
+func cleanPathParts(path []string) []string {
+	for i := 1; i < len(path); i++ {
+		if path[i] == ".." {
+			path = append(path[:i-1], path[:i+1]...)
+		}
+	}
+	return path
 }
