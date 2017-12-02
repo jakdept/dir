@@ -109,8 +109,8 @@ func (d *Tracker) updateDir(e notify.EventInfo) {
 	defer d.lock.Unlock()
 
 	// bail out if it's not a directory
-	info, _ := os.Stat(e.Path())
-	if !info.IsDir() {
+	info, err := os.Stat(e.Path())
+	if err != nil || !info.IsDir() {
 		return
 	}
 
