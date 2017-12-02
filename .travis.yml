@@ -3,11 +3,10 @@ language: go
 go:
   - 1.7.x
   - 1.8.x
-  - master
+  - 1.0.x
 
 os:
  - linux
- - osx
 
 install:
  - go get -t -v ./...
